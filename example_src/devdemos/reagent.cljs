@@ -166,7 +166,19 @@ The simplest way to create a reagent devcard is to pass the `defcard-rg` macro a
    [counter1]) ;; <--1
 ```
 "
-  [counter1])
+  [counter1]
+  {}
+  {:iframe true})
+
+(defcard-rg counter1-2
+  "
+## Counter1-2 (Basic)
+
+Counter1, again. Let's see if it works independently from the other, by using an iframe
+"
+  [counter1]
+  {}
+  {:iframe true})
 
 ;; counter 2
 
