@@ -323,6 +323,13 @@
                 standalone-path (vec (cons :no-iframe path))]
             (sab/html
               [:div.com-rigsomelight-devcards-base.com-rigsomelight-devcards-card-base-no-pad {:key (prn-str path)}
+               [:div.com-rigsomelight-devcards-panel-heading.com-rigsomelight-devcards-typog
+                (if path
+                  (sab/html
+                    [:a
+                     {:href (str "#" (devcards.system/path->token standalone-path))}
+                     (name (last path))  " "])
+                  (sab/html [:span (:name card)]))]
                [:iframe {:src (str "#" (devcards.system/path->token standalone-path))
                          :style {:border "none"
                                  :height 500
