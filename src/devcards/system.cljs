@@ -177,6 +177,8 @@
 
 (defn valid-path? [state path]
   (or (= [] path)
+      (and (= :no-iframe (first path))
+           (get-in (:cards state) (rest path)))
       (get-in (:cards state) path)))
 
 (defn enforce-valid-path [state path]
@@ -202,7 +204,9 @@
 (defn current-page [data]
   (and (:current-path data)
        (:cards data)
-       (get-in (:cards data) (:current-path data))))
+       (get-in (:cards data) (if (= :no-iframe (first (:current-path data)))
+                               (rest (:current-path data))
+                               (:current-path data)))))
 
 (defn display-single-card? [state]
   (devcard? (current-page state)))
@@ -227,8 +231,18 @@
   (map (comp (partial card-template state-atom) second)
        (sort-by (comp :position second) cards)))
 
+(defn process-no-iframe [data]
+  (let [path (:current-path data)]
+    (if (= :no-iframe (first path))
+      (let [new-path (vec (rest path))]
+        (-> data
+            (assoc :current-path new-path)
+            (assoc-in (concat [:cards] new-path [:options :iframe]) false)))
+      data)))
+
 (defn main-cards-template [state-atom]
-  (let [data @state-atom]
+  (let [data @state-atom
+        data (process-no-iframe data)]
     (if (display-single-card? data)
       (card-template state-atom (current-page data))
       (render-cards (display-cards (current-page data)) state-atom))))
@@ -288,25 +302,28 @@
            (sort-by (fn [[key _]] (name key))  dirs))])))
 
 (defn main-template [state-atom]
-  (let [data @state-atom]
+  (let [data @state-atom
+        path (:current-path data)]
     (sab/html
-     [:div
-      {:className
-       (str "com-rigsomelight-devcards-base "
-            (when-let [n (first (:current-path data))]
-              (string/replace (name n) "." "-")))}
-      #_[:div.com-rigsomelight-devcards-navbar
-       [:div.com-rigsomelight-devcards-container
-        [:span.com-rigsomelight-devcards-brand
-         "(:devcards ClojureScript)"]]]
-      [:div.com-rigsomelight-devcards-container
-       (when-let [crumbs (breadcrumbs data)]
-         (breadcrumbs-templ crumbs state-atom))
-       (when-not (display-single-card? data)
-         (let [dir-paths (display-dir-paths data)]
-           (dir-links dir-paths state-atom)))
+     (if (= :no-iframe (first path))
+       [:div (main-cards-template state-atom)]
        [:div
-        (main-cards-template state-atom)]]])))
+        {:className
+         (str "com-rigsomelight-devcards-base "
+              (when-let [n (first path)]
+                (string/replace (name n) "." "-")))}
+        #_[:div.com-rigsomelight-devcards-navbar
+           [:div.com-rigsomelight-devcards-container
+            [:span.com-rigsomelight-devcards-brand
+             "(:devcards ClojureScript)"]]]
+        [:div.com-rigsomelight-devcards-container
+         (when-let [crumbs (breadcrumbs data)]
+           (breadcrumbs-templ crumbs state-atom))
+         (when-not (display-single-card? data)
+           (let [dir-paths (display-dir-paths data)]
+             (dir-links dir-paths state-atom)))
+         [:div
+          (main-cards-template state-atom)]]]))))
 
 (defonce-react-class DevcardsRoot
   #js {:componentDidMount

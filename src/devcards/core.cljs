@@ -313,6 +313,28 @@
                (frame children card) ;; make component and forward options
                (sab/html [:div.com-rigsomelight-devcards-frameless {} children])))))})
 
+(defonce-react-class DevcardIFrame
+  #js {:render
+       (fn []
+         (this-as
+          this
+          (let [card (get-props this :card)
+                path (:path card)
+                standalone-path (vec (cons :no-iframe path))]
+            (sab/html
+              [:div.com-rigsomelight-devcards-base.com-rigsomelight-devcards-card-base-no-pad {:key (prn-str path)}
+               [:div.com-rigsomelight-devcards-panel-heading.com-rigsomelight-devcards-typog
+                (if path
+                  (sab/html
+                    [:a
+                     {:href (str "#" (devcards.system/path->token standalone-path))}
+                     (name (last path))  " "])
+                  (sab/html [:span (:name card)]))]
+               [:iframe {:src (str "#" (devcards.system/path->token standalone-path))
+                         :style {:border "none"
+                                 :height 500
+                                 :width "100%"}}]]))))})
+
 (def render-into-dom
   (if (html-env?)
     (fn [this]
@@ -397,7 +419,7 @@
                       {:label :initial-data
                        :message "should be an Atom or a Map or nil."
                        :value initial-data})]
-                 (mapv #(booler? % (:options opts)) [:frame :heading :padding :inspect-data :watch-atom :history :static-state])))))
+                 (mapv #(booler? % (:options opts)) [:frame :iframe :heading :padding :inspect-data :watch-atom :history :static-state])))))
     [{:message "Card should be a Map."
       :value   opts}]))
 
@@ -407,6 +429,7 @@
                              :react-or-fn (fn [] 1)
                              :initial-data {}
                              :frame true
+                             :iframe false
                              :heading false
                              :padding false
                              :inspect-data true
@@ -499,9 +522,19 @@
       :else (IdentiyOptions. main-obj))))
 
 (defn card-base [opts]
-  (let [opts (assoc opts :path (:path devcards.system/*devcard-data*))]
-    (if (satisfies? IDevcard (:main-obj opts))
+  (let [opts (assoc opts
+                    :path (:path devcards.system/*devcard-data*)
+                    :options (or (:options devcards.system/*devcard-data*)
+                                 (:options opts)))]
+    (println opts)
+    (cond
+      (satisfies? IDevcard (:main-obj opts))
       (-devcard (:main-obj opts) opts)
+
+      (get-in opts [:options :iframe])
+      (js/React.createElement DevcardIFrame #js { :card (add-environment-defaults opts) })
+
+      :else
       (card-with-errors
        (-devcard-options (coerce-to-devcards-options (:main-obj opts))
                            opts)))))
