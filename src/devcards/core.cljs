@@ -353,7 +353,8 @@
           this
           (let [card (get-props this :card)
                 path (:path card)
-                standalone-path (vec (cons :no-iframe path))]
+                standalone-path (vec (cons :no-iframe path))
+                card-name (name (last path))]
             (sab/html
               [:div.com-rigsomelight-devcards-base.com-rigsomelight-devcards-card-base-no-pad {:key (prn-str path)}
                [:div.com-rigsomelight-devcards-panel-heading.com-rigsomelight-devcards-typog
@@ -361,10 +362,11 @@
                   (sab/html
                     [:a
                      {:href (str "#" (devcards.system/path->token standalone-path))}
-                     (name (last path))  " "])
+                     card-name  " "])
                   (sab/html [:span (:name card)]))]
                (js/React.createElement AutoResizeIFrame
                                        #js {:src (str "#" (devcards.system/path->token standalone-path))
+                                            :name card-name
                                             :style {:border "none"
                                                     :width "100%"}})]))))})
 
