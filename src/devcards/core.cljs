@@ -557,11 +557,11 @@
       :else (IdentiyOptions. main-obj))))
 
 (defn card-base [opts]
+  (println "card-base options 0 " (:options opts))
   (let [opts (assoc opts
                     :path (:path devcards.system/*devcard-data*)
-                    :options (or (:options devcards.system/*devcard-data*)
-                                 (:options opts)))]
-    (println opts)
+                    :options (merge (:options opts)
+                                    (:options devcards.system/*devcard-data*)))]
     (cond
       (satisfies? IDevcard (:main-obj opts))
       (-devcard (:main-obj opts) opts)
