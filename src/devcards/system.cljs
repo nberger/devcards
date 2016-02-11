@@ -237,7 +237,9 @@
       (let [new-path (vec (rest path))]
         (-> data
             (assoc :current-path new-path)
-            (assoc-in (concat [:cards] new-path [:options :iframe]) false)))
+            (assoc-in (concat [:cards] new-path [:options :iframe]) false)
+            (assoc-in (concat [:cards] new-path [:options :no-top-margin]) true)
+            (assoc-in (concat [:cards] new-path [:options :heading]) false)))
       data)))
 
 (defn main-cards-template [state-atom]

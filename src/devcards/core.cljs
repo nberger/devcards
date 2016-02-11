@@ -162,6 +162,8 @@
          [:div
           {:key (prn-str path)
            :class (str "com-rigsomelight-devcards-card-base-no-pad "
+                       (when (:no-top-margin options)
+                         " com-rigsomelight-devcards-card-no-top-margin")
                        (when (:hide-border options)
                          " com-rigsomelight-devcards-card-hide-border"))}
           (naked-card children card)])
@@ -313,6 +315,37 @@
                (frame children card) ;; make component and forward options
                (sab/html [:div.com-rigsomelight-devcards-frameless {} children])))))})
 
+(defonce-react-class AutoResizeIFrame
+  #js {:componentDidMount
+       (fn []
+         (this-as
+           this
+           (let [node (.getDOMNode this)]
+             (.setState
+               this
+               #js {:resize_interval
+                    (js/setInterval
+                      (fn []
+                        (let [height (-> node
+                                         .-contentWindow
+                                         .-document
+                                         .-body
+                                         .-scrollHeight)]
+                          (set! (.-height node) height)))
+                      1000)}))))
+       :componentWillUnmount
+       (fn []
+         (this-as
+           this
+           (let [interval (get-state this :resize_interval)]
+             (js/clearInterval interval))))
+       :render
+       (fn []
+         (this-as
+          this
+          (sab/html
+            [:iframe (js->clj (.-props this))])))})
+
 (defonce-react-class DevcardIFrame
   #js {:render
        (fn []
@@ -320,7 +353,8 @@
           this
           (let [card (get-props this :card)
                 path (:path card)
-                standalone-path (vec (cons :no-iframe path))]
+                standalone-path (vec (cons :no-iframe path))
+                card-name (name (last path))]
             (sab/html
               [:div.com-rigsomelight-devcards-base.com-rigsomelight-devcards-card-base-no-pad {:key (prn-str path)}
                [:div.com-rigsomelight-devcards-panel-heading.com-rigsomelight-devcards-typog
@@ -328,12 +362,13 @@
                   (sab/html
                     [:a
                      {:href (str "#" (devcards.system/path->token standalone-path))}
-                     (name (last path))  " "])
+                     card-name  " "])
                   (sab/html [:span (:name card)]))]
-               [:iframe {:src (str "#" (devcards.system/path->token standalone-path))
-                         :style {:border "none"
-                                 :height 500
-                                 :width "100%"}}]]))))})
+               (js/React.createElement AutoResizeIFrame
+                                       #js {:src (str "#" (devcards.system/path->token standalone-path))
+                                            :name card-name
+                                            :style {:border "none"
+                                                    :width "100%"}})]))))})
 
 (def render-into-dom
   (if (html-env?)
@@ -522,11 +557,11 @@
       :else (IdentiyOptions. main-obj))))
 
 (defn card-base [opts]
+  (println "card-base options 0 " (:options opts))
   (let [opts (assoc opts
                     :path (:path devcards.system/*devcard-data*)
-                    :options (or (:options devcards.system/*devcard-data*)
-                                 (:options opts)))]
-    (println opts)
+                    :options (merge (:options opts)
+                                    (:options devcards.system/*devcard-data*)))]
     (cond
       (satisfies? IDevcard (:main-obj opts))
       (-devcard (:main-obj opts) opts)
