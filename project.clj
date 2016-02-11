@@ -1,4 +1,4 @@
-(defproject org.clojars.nberger/devcards "0.2.0-8-iframe-SNAPSHOT-2"
+(defproject org.clojars.nberger/devcards "0.2.0-8-iframe.2-SNAPSHOT"
   :description "Devcards is a ClojureScript library that provides a lab space to you develop your UI components independently and interactively."
   :url "http://github.com/bhauman/devcards"
   :license {:name "Eclipse Public License"
